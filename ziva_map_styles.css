@@ -2,13 +2,14 @@
 	height: 100vh;
 }
 
+.mapboxgl-popup {
+	max-width: 400px;
+	font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+
 .heading {
-	font-family: Source Sans Pro,Helvetica Neue,Helvetica,Arial,sans-serif;
-	color: #2b83ba;
-    font-weight: 600;
-    font-size: 20px;
-	padding: 5px;
-	text-align: center;
+	margin: 10px; 
+	text-align: center; 
 }
 
 /**
