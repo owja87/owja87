@@ -22,8 +22,7 @@
 		<div class="row content">
 			<div class="col-sm-3 sidenav">
 				<div class="heading">
-				<img src="usa.svg" alt="USA" height="65px" width="75px" align="left"/>
-				<p class="heading">USA Sociological Indicators Map</p>
+					<img src="usa_2.svg" alt="USA" height="40px">
 				</div>
 				<!-- Div for dropdown select to change map style  -->
 				<div class="form-group">
@@ -88,6 +87,39 @@
 	style: 'mapbox://styles/mapbox/light-v10'
 	});
 	
+	mapboxgl.accessToken = 'pk.eyJ1Ijoib3dqYSIsImEiOiJjankzNWlzY2owdGl6M21tb244aWwyMXRsIn0.GcioU7YAQO1VGI_kdq1OFQ';
+ 
+	// change cursor appearance
+	map.getCanvas().style.cursor = 'default';
+	
+	// change map bounding box
+	map.fitBounds([[-126.2, 24.3], [-64.1, 49.6]]);
+	
+	// Add zoom and rotation controls to the map.
+	map.addControl(new mapboxgl.NavigationControl());
+	
+	var popup = new mapboxgl.Popup({
+		closeButton: false,
+		closeOnClick: false
+	});
+	
+	map.on('load', function() {
+		map.on('mouseenter', 'map_data', function(e) {
+			popup.setLngLat(e.lngLat)
+			.setHTML('<p>Name: <strong>' + e.features[0].properties.name + '</strong></p><p>Value: <strong><em>' + e.features[0].properties.data + '</strong></em></p>')
+			.addTo(map);
+		});
+		
+		map.on('mouseenter', 'map_data', function(e) {
+			// Change the cursor style as a UI indicator.
+			map.getCanvas().style.cursor = 'pointer';
+		});
+	
+		map.on('mouseleave', 'map_data', function() {
+			map.getCanvas().style.cursor = 'default';
+			popup.remove();
+		});
+	});
 	// load event - check map style is loaded before executing following code
 	//map.on('load', function() {
 	//	var layers = ['Very Low', 'Low', 'Moderate', 'High', 'Very High'];
@@ -121,12 +153,6 @@
 			document.getElementById('info').innerHTML = '<p></p>';
 		}
 	});
-	
-	// change cursor appearance
-	map.getCanvas().style.cursor = 'default';
-	
-	// change map bounding box
-	map.fitBounds([[-130.2421875, 16.972741], [-50.63671875, 55.696361]]);
 	
 	// change style based on user input
 	function switchStyle() {
