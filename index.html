@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="US Sociological Indicators Map">
+	<meta name="author" content="ZIVA">
+	<!-- Load map stylesheet -->
+	<link href='ziva_map_styles.css' rel='stylesheet' />
+	<!-- Load Mapbox JavaScript API for building web maps -->
+	<script src='https://api.mapbox.com/mapbox-gl-js/v1.0.0/mapbox-gl.js'></script>
+	<link href='https://api.mapbox.com/mapbox-gl-js/v1.0.0/mapbox-gl.css' rel='stylesheet' />
+	<title>US Sociological Indicators Map</title>
+	<!-- Bootstrap core CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+	<!-- Bootstrap core JavaScript -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+</head>
+<body>
+	<div class="container-fluid">
+		<div class="row content">
+			<div class="col-sm-3 sidenav">
+				<div class="heading">
+				<img src="usa.svg" alt="USA" height="65px" width="75px" align="left"/>
+				<p class="heading">USA Sociological Indicators Map</p>
+				</div>
+				<!-- Div for dropdown select to change map style  -->
+				<div class="form-group">
+					<select class="form-control" id="outcome_select">
+						<option value="" disabled selected>Choose an Outcome</option>
+						<option value="a">Life Expectancy at Birth</option>
+						<option value="b">% Adults Who Report Fewer Than 7 Hours of Sleep on Average</option>
+						<option value="c">% With Health Insurance Coverage</option>
+						<option value="d">% With Income in the Past 12 Months Below Poverty Level</option>
+						<option value="e">Median Household Income in the Past 12 Months (2017 Inflation-Adjusted Dollars)</option>
+						<option value="f">% Non-Hispanic Black</option>
+						<option value="g">% Non-Hispanic White</option>
+						<option value="h">% Hispanic</option>
+						<option value="i">Median Value ($): Owner-Occupied Housing Units</option>
+						<option value="j">Median Gross Rent: Renter-Occupied Housing Units Paying Cash Rent</option>
+						<option value="k">Total Units: HUD Subsidized Housing</option>
+						<option value="l">Eviction Rate</option>
+						<option value="m">Eviction Filing Rate</option>
+						<option value="n">Violent Crime per 100,000</option>
+						<option value="o">Incarceration Rate</option>
+						<option value="p">% Currently Married</option>
+						<option value="q">% Unemployed</option>
+						<option value="r">% Developable Land</option>
+						<option value="s">Geographic Mobility</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<select class="form-control" id="level_select">
+						<option value="" disabled selected>Choose a Level</option>
+						<option value="1">Regions</option>
+						<option value="2">Census Divisions</option>
+						<option value="3">States</option>
+						<option value="4">CBSAs</option>
+						<option value="5">Commuting Zones</option>
+						<option value="6">Counties</option>
+						<option value="7">Incorporated Places</option>
+						<option value="8">Unincorporated Places</option>
+						<option value="9">Federal American Indian Areas</option>
+						<option value="10">School Districts</option>
+						<option value="11">Zip Code Areas</option>
+						<option value="12">Census Tracts</option>
+					</select>
+				</div>
+				<!-- Button to change style to user input  -->
+				<button type="button" class="btn" onclick="switchStyle()">Submit</button>
+				<div id='info'><p></p></div>
+			</div>
+			<div class="col-sm-9">
+				<!-- Our web map and content will go here -->
+				<div id='map'></div>
+				<!-- Div for map legend
+				<div class='map-overlay' id='legend'></div> -->
+			</div>
+		</div>
+	</div>
+	
+	<!-- Script to load mapbox map -->
+	<script>
+	mapboxgl.accessToken = 'pk.eyJ1Ijoib3dqYSIsImEiOiJjankzNWlzY2owdGl6M21tb244aWwyMXRsIn0.GcioU7YAQO1VGI_kdq1OFQ';
+	var map = new mapboxgl.Map({
+	container: 'map', // container id
+	style: 'mapbox://styles/mapbox/light-v10'
+	});
+	
+	// load event - check map style is loaded before executing following code
+	//map.on('load', function() {
+	//	var layers = ['Very Low', 'Low', 'Moderate', 'High', 'Very High'];
+	//	var colors = ['#d7191c', '#fdae61', '#ffffbf', '#abdda4', '#2b83ba'];
+		
+		// iterates through the list of layers defined above and adds a legend element for each one based on the name of the layer and its color.
+		//for (i = 0; i < layers.length; i++) {
+			//var layer = layers[i];
+			//var color = colors[i];
+			//var item = document.createElement('div');
+			//var key = document.createElement('span');
+			//key.className = 'legend-key';
+			//key.style.backgroundColor = color;
+
+			//var value = document.createElement('span');
+			//value.innerHTML = layer;
+			//item.appendChild(key);
+			//item.appendChild(value);
+			//legend.appendChild(item);	
+		//}
+	//});
+		
+	// click event display clicked item data
+	map.on('click', function(e) {
+		var indicator = map.queryRenderedFeatures(e.point, {
+			layers: ['map_data']
+		});
+		if (indicator.length > 0) {
+			document.getElementById('info').innerHTML = '<p>Name: <strong>' + indicator[0].properties.name + '</strong></p><p>Value: <strong><em>' + indicator[0].properties.data + '</strong></em></p>';
+		} else {
+			document.getElementById('info').innerHTML = '<p></p>';
+		}
+	});
+	
+	// change cursor appearance
+	map.getCanvas().style.cursor = 'default';
+	
+	// change map bounding box
+	map.fitBounds([[-130.2421875, 16.972741], [-50.63671875, 55.696361]]);
+	
+	// change style based on user input
+	function switchStyle() {
+		var outcome = document.getElementById('outcome_select').value;
+		var level = document.getElementById('level_select').value;
+		var styleId = outcome + level;
+		if (styleId === 'a1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'a2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'a3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'a4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'a5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'a6') {
+			map.setStyle('mapbox://styles/owja/cjy9ln5oy0plu1dp385nbnf6i')
+		} else if (styleId === 'a7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'a8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'a9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'a10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'a11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'a12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'b1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'b2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'b3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'b4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'b5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'b6') {
+			map.setStyle('mapbox://styles/owja/cjy9mlh320ty71cpbtiuf3khq')
+		} else if (styleId === 'b7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'b8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'b9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'b10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'b11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'b12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'c1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'c2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'c3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'c4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'c5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'c6') {
+			map.setStyle('mapbox://styles/owja/cjy9pdtvg0wki1cr1nf13fhm2')
+		} else if (styleId === 'c7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'c8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'c9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'c10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'c11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'c12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'd1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'd2') {	
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'd3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'd4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'd5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'd6') {
+			map.setStyle('mapbox://styles/owja/cjy9vseoq12iq1cqgny87ftez')
+		} else if (styleId === 'd7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'd8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'd9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'd10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'd11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'd12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'e12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'f12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'g12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h5') {	
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'h12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'i12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'j1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'j2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'j3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'j4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'j5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'j6') {
+			map.setStyle('mapbox://styles/owja/cjy9wb12p13111co2dbk1jrcg')
+		} else if (styleId === 'j7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'j8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'j9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'j10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'j11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'j12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'k12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l9') {	
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'l12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'm12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'n12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o10') {	
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'o12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'p12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q8') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'q12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'r1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'r2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'r3') {
+			map.setStyle('mapbox://styles/owja/cjy2vnxfw0cq81crvfaonct9z')
+		} else if (styleId === 'r4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'r5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'r6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'r7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'r8') {	
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'r9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'r10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'r11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 'r12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's1') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's2') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's3') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's4') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's5') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's6') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's7') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's8') {	
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's9') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's10') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's11') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		} else if (styleId === 's12') {
+			map.setStyle('mapbox://styles/owja/undefined')
+		}
+	}
+	</script>
+</body>
+</html>

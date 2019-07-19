@@ -1,0 +1,70 @@
+#map {
+	height: 100vh;
+}
+
+.heading {
+	font-family: Source Sans Pro,Helvetica Neue,Helvetica,Arial,sans-serif;
+	color: #2b83ba;
+    font-weight: 600;
+    font-size: 20px;
+	padding: 5px;
+	text-align: center;
+}
+
+/**
+* Set rules for how legend will be displayed
+* on the page. */
+.map-overlay {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	background: rgba(255, 255, 255, 0.8);
+	margin-right: 20px;
+	font-family: Arial, sans-serif;
+	overflow: auto;
+	border-radius: 3px;
+}
+
+#legend {
+	padding: 10px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+	line-height: 18px;
+	height: 120px;
+	margin-bottom: 40px;
+	width: 100px;
+}
+
+.legend-key {
+	display: inline-block;
+	border-radius: 20%;
+	width: 10px;
+	height: 10px;
+	margin-right: 5px;
+}
+
+/* Set height of the grid so .sidenav can be 100% (adjust if needed) */
+.row.content {
+	height: 100vh;
+	background-color: #f1f1f1;
+}
+    
+/* Set gray background color and 100% height */
+.sidenav {
+	background-color: #f1f1f1;
+	height: 100%;
+}
+        
+/* On small screens, set height to 'auto' for sidenav and grid */
+@media screen and (max-width: 767px) {
+	.sidenav {
+		height: auto;
+		padding: 15px;
+	}
+	.row.content {
+		height: auto;
+	} 
+}
+
+#info {
+	margin-top: 15px; 
+}
