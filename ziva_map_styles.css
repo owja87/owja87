@@ -1,3 +1,57 @@
+/* create flexbox layout for interactive map */
+.all_content_row {
+	display: -ms-flexbox; /* IE10 */
+    display: flex;
+    -ms-flex-wrap: wrap; /* IE10 */
+    flex-wrap: wrap;
+	width: 100%; 
+	margin: auto; 
+}
+
+/* Create two un-equal columns that sit next to each other */
+.left_panel_column {
+    -ms-flex: 25%; /* IE10 */
+    flex: 25%;
+    max-width: 25%;
+	text-align: left;
+}
+
+.map_column {
+    -ms-flex: 75%; /* IE10 */
+    flex: 75%;
+    max-width: 75%;
+}
+
+/* Responsive layout - makes the two columns stack on top of each other instead of next to each other */
+@media (max-width: 1000px) {
+	.left_panel_column {
+        -ms-flex: 100%;
+        flex: 100%;
+        max-width: 100%;
+		text-align: center;
+    }
+	
+	.map_column {
+        -ms-flex: 100%;
+        flex: 100%;
+        max-width: 100%;
+    }
+}
+
+.heading {
+	height: 60px;
+	background-color: #2b83ba;
+	background-image: url(usa_logo.svg);
+	background-repeat: no-repeat;
+    background-position: center;
+	margin-bottom: 10px; 
+}
+
+.info-section {
+	padding: 10px;
+}
+
+/*make sure map fills entire screen */
 #map {
 	height: 100vh;
 }
@@ -7,9 +61,26 @@
 	font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
 }
 
-.heading {
-	margin: 10px; 
-	text-align: center; 
+#outcome-info  {
+	margin-top: 15px; 
+}
+
+#level-info {
+	margin-top: 15px; 
+}
+
+.usa-conus-zoom-button {
+	width: 35px;
+    height: 35px;
+    display: block;
+    padding: 0;
+    outline: none;
+    border: 0;
+    box-sizing: border-box;
+    background-color: #fff;
+    cursor: pointer;
+	border-radius: 4px; 
+	border: 1px solid #ddd;
 }
 
 /**
@@ -20,7 +91,7 @@
 	bottom: 0;
 	right: 0;
 	background: rgba(255, 255, 255, 0.8);
-	margin-right: 20px;
+	margin-right: 40px;
 	font-family: Arial, sans-serif;
 	overflow: auto;
 	border-radius: 3px;
@@ -30,42 +101,18 @@
 	padding: 10px;
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 	line-height: 18px;
-	height: 120px;
+	height: 75px;
 	margin-bottom: 40px;
-	width: 100px;
+	width: 320px;
 }
 
-.legend-key {
-	display: inline-block;
-	border-radius: 20%;
-	width: 10px;
-	height: 10px;
-	margin-right: 5px;
-}
-
-/* Set height of the grid so .sidenav can be 100% (adjust if needed) */
-.row.content {
-	height: 100vh;
-	background-color: #f1f1f1;
-}
-    
-/* Set gray background color and 100% height */
-.sidenav {
-	background-color: #f1f1f1;
-	height: 100%;
-}
-        
-/* On small screens, set height to 'auto' for sidenav and grid */
-@media screen and (max-width: 767px) {
-	.sidenav {
-		height: auto;
-		padding: 15px;
-	}
-	.row.content {
-		height: auto;
-	} 
-}
-
-#info {
-	margin-top: 15px; 
+.legend label,
+.legend span {
+	display:block;
+	float:left;
+	height:15px;
+	width:20%;
+	text-align:center;
+	font-size:9px;
+	color:#808080;
 }
