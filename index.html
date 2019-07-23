@@ -15,18 +15,16 @@
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
 	<!-- Bootstrap core JavaScript -->
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
 </head>
 <body>
-	<div class="container-fluid">
-		<div class="row content">
-			<div class="col-sm-3 sidenav">
-				<div class="heading">
-					<img src="usa_2.svg" alt="USA" height="40px">
-				</div>
-				<!-- Div for dropdown select to change map style  -->
+	<div class="all_content_row">
+		<div class="left_panel_column">
+			<div class="heading"></div>
+			<!-- Div for dropdown select to change map style  -->
+			<div class="info-section">
 				<div class="form-group">
-					<select class="form-control" id="outcome_select">
+					<select class="form-control" id="outcome-select">
 						<option value="" disabled selected>Choose an Outcome</option>
 						<option value="a">Life Expectancy at Birth</option>
 						<option value="b">% Adults Who Report Fewer Than 7 Hours of Sleep on Average</option>
@@ -50,7 +48,7 @@
 					</select>
 				</div>
 				<div class="form-group">
-					<select class="form-control" id="level_select">
+					<select class="form-control" id="level-select">
 						<option value="" disabled selected>Choose a Level</option>
 						<option value="1">Regions</option>
 						<option value="2">Census Divisions</option>
@@ -68,17 +66,31 @@
 				</div>
 				<!-- Button to change style to user input  -->
 				<button type="button" class="btn" onclick="switchStyle()">Submit</button>
-				<div id='info'><p></p></div>
+				<div id='outcome-info'></div>
+				<div id='level-info'></div>
 			</div>
-			<div class="col-sm-9">
-				<!-- Our web map and content will go here -->
-				<div id='map'></div>
-				<!-- Div for map legend
-				<div class='map-overlay' id='legend'></div> -->
+		</div>
+		<div class="map_column">
+			<!-- Our web map and content will go here -->
+			<div id="map"></div>
+			<!-- Div for map legend --->
+			<div class="map-overlay" id="legend" style="visibility:hidden;">
+				<div id="legend-title" style="font-size:9px; color: #808080; font-weight: 700;"></div>
+				<nav class='legend clearfix'>
+				<div id="col-vlow"></div>
+				<div id="col-low" ></div>
+				<div  id="col-mod"></div>
+				<div id="col-high"></div>
+				<div id="col-vhigh"></div>    
+				<label id="label-vlow"></label>
+				<label id="label-low"></label>
+				<label id="label-mod"></label>
+				<label id="label-high"></label>
+				<label id="label-vhigh"></label>			
 			</div>
 		</div>
 	</div>
-	
+
 	<!-- Script to load mapbox map -->
 	<script>
 	mapboxgl.accessToken = 'pk.eyJ1Ijoib3dqYSIsImEiOiJjankzNWlzY2owdGl6M21tb244aWwyMXRsIn0.GcioU7YAQO1VGI_kdq1OFQ';
@@ -87,17 +99,50 @@
 	style: 'mapbox://styles/mapbox/light-v10'
 	});
 	
-	mapboxgl.accessToken = 'pk.eyJ1Ijoib3dqYSIsImEiOiJjankzNWlzY2owdGl6M21tb244aWwyMXRsIn0.GcioU7YAQO1VGI_kdq1OFQ';
- 
 	// change cursor appearance
 	map.getCanvas().style.cursor = 'default';
 	
-	// change map bounding box
+	// set map bounding box to CONUS
 	map.fitBounds([[-126.2, 24.3], [-64.1, 49.6]]);
 	
-	// Add zoom and rotation controls to the map.
-	map.addControl(new mapboxgl.NavigationControl());
+	// Add zoom and rotation controls to the map
+	map.addControl(new mapboxgl.NavigationControl({
+		showCompass: false
+		}));
 	
+	// Add custom control to zoom to CONUS extent
+	class resetZoomControl {
+		onAdd(map){
+			this.map = map;
+			this.container = document.createElement('div');
+			this.container.className = 'mapboxgl-ctrl usa-conus-zoom-control';
+
+			const button = this._createButton('usa-conus-zoom-button')
+			this.container.appendChild(button);
+			return this.container;
+		}
+		
+		onRemove(){
+			this.container.parentNode.removeChild(this.container);
+			this.map = undefined;
+		}
+		
+		_createButton(className) {
+			const el = window.document.createElement('button')
+			el.className = className;
+			el.innerHTML = '<img src="usa.svg" height="18px" width="18px"/>';
+			el.addEventListener('click',(e)=>{
+				var conus = [[-126.2, 24.3], [-64.1, 49.6]];
+				map.fitBounds(conus);
+				},false )
+			return el;
+		}
+	}
+	
+	const zoomControl = new resetZoomControl()
+	map.addControl(zoomControl,'top-left')
+	
+	// Add popup on hover	
 	var popup = new mapboxgl.Popup({
 		closeButton: false,
 		closeOnClick: false
@@ -106,7 +151,7 @@
 	map.on('load', function() {
 		map.on('mouseenter', 'map_data', function(e) {
 			popup.setLngLat(e.lngLat)
-			.setHTML('<p>Name: <strong>' + e.features[0].properties.name + '</strong></p><p>Value: <strong><em>' + e.features[0].properties.data + '</strong></em></p>')
+			.setHTML('<p>Name: <strong>' + e.features[0].properties.name + '</strong></p><p>Value: <strong><em>' + e.features[0].properties.data + ' ' + e.features[0].properties.units + '</strong></em></p>')
 			.addTo(map);
 		});
 		
@@ -120,35 +165,13 @@
 			popup.remove();
 		});
 	});
-	// load event - check map style is loaded before executing following code
-	//map.on('load', function() {
-	//	var layers = ['Very Low', 'Low', 'Moderate', 'High', 'Very High'];
-	//	var colors = ['#d7191c', '#fdae61', '#ffffbf', '#abdda4', '#2b83ba'];
-		
-		// iterates through the list of layers defined above and adds a legend element for each one based on the name of the layer and its color.
-		//for (i = 0; i < layers.length; i++) {
-			//var layer = layers[i];
-			//var color = colors[i];
-			//var item = document.createElement('div');
-			//var key = document.createElement('span');
-			//key.className = 'legend-key';
-			//key.style.backgroundColor = color;
 
-			//var value = document.createElement('span');
-			//value.innerHTML = layer;
-			//item.appendChild(key);
-			//item.appendChild(value);
-			//legend.appendChild(item);	
-		//}
-	//});
-		
-	// click event display clicked item data
 	map.on('click', function(e) {
 		var indicator = map.queryRenderedFeatures(e.point, {
 			layers: ['map_data']
 		});
 		if (indicator.length > 0) {
-			document.getElementById('info').innerHTML = '<p>Name: <strong>' + indicator[0].properties.name + '</strong></p><p>Value: <strong><em>' + indicator[0].properties.data + '</strong></em></p>';
+			document.getElementById('level-info').innerHTML = '<p>Name: <strong>' + indicator[0].properties.name + '</strong></p><p>Value: <strong><em>' + indicator[0].properties.data + ' ' + indicator[0].properties.units + '</strong></em></p>';
 		} else {
 			document.getElementById('info').innerHTML = '<p></p>';
 		}
@@ -156,465 +179,1159 @@
 	
 	// change style based on user input
 	function switchStyle() {
-		var outcome = document.getElementById('outcome_select').value;
-		var level = document.getElementById('level_select').value;
+		var outcome = document.getElementById('outcome-select').value;
+		var level = document.getElementById('level-select').value;
 		var styleId = outcome + level;
 		if (styleId === 'a1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";   
 		} else if (styleId === 'a2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'a3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'a4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'a5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'a6') {
 			map.setStyle('mapbox://styles/owja/cjy9ln5oy0plu1dp385nbnf6i')
+			document.getElementById('outcome-info').innerHTML = '<p><strong>Source:</strong> National Center for Health Statistics. U.S. Small-Area Life Expectancy Estimates Project (USALEEP): Life Expectancy Estimates File for USA, 2010-2015<br><strong>Year:</strong> 2010 - 2015<br><a href="https://www.cdc.gov/nchs/nvss/usaleep/usaleep.html#life-expectancy" target="_blank">Go to source</a></p>';
+			document.getElementById('legend').style.visibility = 'visible';   
+			document.getElementById('legend-title').innerHTML = 'Life Expectancy (Years)';
+			document.getElementById('label-vlow').innerHTML = '69 - 75.4';
+			document.getElementById('label-low').innerHTML = '75.4 - 77.0';
+			document.getElementById('label-mod').innerHTML = '77.0 - 78.3';
+			document.getElementById('label-high').innerHTML = '78.3 - 79.9';
+			document.getElementById('label-vhigh').innerHTML = '89.9 - 89.5';
+			document.getElementById('col-vlow').innerHTML = '<span style="background:#d7191c;"></span>';
+			document.getElementById('col-low').innerHTML = '<span style="background:#fdae61;"></span>';
+			document.getElementById('col-mod').innerHTML = '<span style="background:#ffffbf;"></span>';
+			document.getElementById('col-high').innerHTML = '<span style="background:#abdda4;"></span>';
+			document.getElementById('col-vhigh').innerHTML = '<span style="background:#2b83ba;"></span>'; 
 		} else if (styleId === 'a7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'a8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'a9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'a10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'a11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'a12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b6') {
-			map.setStyle('mapbox://styles/owja/cjy9mlh320ty71cpbtiuf3khq')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden"; 
 		} else if (styleId === 'b7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c6') {
-			map.setStyle('mapbox://styles/owja/cjy9pdtvg0wki1cr1nf13fhm2')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden"; 
 		} else if (styleId === 'c7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd2') {	
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd6') {
-			map.setStyle('mapbox://styles/owja/cjy9vseoq12iq1cqgny87ftez')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden"; 
 		} else if (styleId === 'd7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'e12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'f12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'g12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h5') {	
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'h12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j6') {
-			map.setStyle('mapbox://styles/owja/cjy9wb12p13111co2dbk1jrcg')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden"; 
 		} else if (styleId === 'j7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'k12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l9') {	
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'l12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'm12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'n12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o10') {	
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'o12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'p12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q8') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'q12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'r1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'r2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'r3') {
-			map.setStyle('mapbox://styles/owja/cjy2vnxfw0cq81crvfaonct9z')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden"; 
 		} else if (styleId === 'r4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'r5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'r6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'r7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'r8') {	
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'r9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'r10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'r11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'r12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's1') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's2') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's3') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's4') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's5') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's6') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's7') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's8') {	
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's9') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's10') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's11') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 's12') {
-			map.setStyle('mapbox://styles/owja/undefined')
+			map.setStyle('mapbox://styles/mapbox/light-v10')
+			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
+			document.getElementById("legend").style.visibility = "hidden";
 		}
 	}
 	</script>
