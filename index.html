@@ -69,6 +69,7 @@
 				<div id='outcome-info'></div>
 				<div id='level-info'></div>
 			</div>
+			<div class="map-footer"></div>
 		</div>
 		<div class="map_column">
 			<!-- Our web map and content will go here -->
@@ -143,29 +144,30 @@
 	map.addControl(zoomControl,'top-left')
 	
 	// Add popup on hover	
-	var popup = new mapboxgl.Popup({
-		closeButton: false,
-		closeOnClick: false
-	});
+	//var popup = new mapboxgl.Popup({
+	//	closeButton: false,
+	//	closeOnClick: false
+	//});
 	
-	map.on('load', function() {
-		map.on('mouseenter', 'map_data', function(e) {
-			popup.setLngLat(e.lngLat)
-			.setHTML('<p>Name: <strong>' + e.features[0].properties.name + '</strong></p><p>Value: <strong><em>' + e.features[0].properties.data + ' ' + e.features[0].properties.units + '</strong></em></p>')
-			.addTo(map);
-		});
-		
-		map.on('mouseenter', 'map_data', function(e) {
-			// Change the cursor style as a UI indicator.
-			map.getCanvas().style.cursor = 'pointer';
-		});
+	//map.on('load', function() {
+	//	map.on('mouseenter', 'map_data', function(e) {
+	//		popup.setLngLat(e.lngLat)
+	//		.setHTML('<p>Name: <strong>' + e.features[0].properties.name + '</strong></p><p>Value: <strong><em>' + e.features[0].properties.data + ' ' + //e.features[0].properties.units + '</strong></em></p>')
+//			.addTo(map);
+//		});
+//		
+//		map.on('mouseenter', 'map_data', function(e) {
+//			// Change the cursor style as a UI indicator.
+//			map.getCanvas().style.cursor = 'pointer';
+//		});
+//	
+//		map.on('mouseleave', 'map_data', function() {
+//			map.getCanvas().style.cursor = 'default';
+//			popup.remove();
+//		});
+//	});
 	
-		map.on('mouseleave', 'map_data', function() {
-			map.getCanvas().style.cursor = 'default';
-			popup.remove();
-		});
-	});
-
+	// Display info for clicked on feature in info/nav panel on the left
 	map.on('click', function(e) {
 		var indicator = map.queryRenderedFeatures(e.point, {
 			layers: ['map_data']
@@ -173,7 +175,7 @@
 		if (indicator.length > 0) {
 			document.getElementById('level-info').innerHTML = '<p>Name: <strong>' + indicator[0].properties.name + '</strong></p><p>Value: <strong><em>' + indicator[0].properties.data + ' ' + indicator[0].properties.units + '</strong></em></p>';
 		} else {
-			document.getElementById('info').innerHTML = '<p></p>';
+			document.getElementById('level-info').innerHTML = '<p></p>';
 		}
 	});
 	
@@ -210,6 +212,7 @@
 		} else if (styleId === 'a6') {
 			map.setStyle('mapbox://styles/owja/cjy9ln5oy0plu1dp385nbnf6i')
 			document.getElementById('outcome-info').innerHTML = '<p><strong>Source:</strong> National Center for Health Statistics. U.S. Small-Area Life Expectancy Estimates Project (USALEEP): Life Expectancy Estimates File for USA, 2010-2015<br><strong>Year:</strong> 2010 - 2015<br><a href="https://www.cdc.gov/nchs/nvss/usaleep/usaleep.html#life-expectancy" target="_blank">Go to source</a></p>';
+			document.getElementById('level-info').innerHTML = '<p><em><span style="color:grey;">Query the map by clicking on a feature</span></em></p>';
 			document.getElementById('legend').style.visibility = 'visible';   
 			document.getElementById('legend-title').innerHTML = 'Life Expectancy (Years)';
 			document.getElementById('label-vlow').innerHTML = '69 - 75.4';
