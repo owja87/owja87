@@ -281,10 +281,21 @@
 			document.getElementById('level-info').innerHTML = '<p></p>';
 			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'b6') {
-			map.setStyle('mapbox://styles/mapbox/light-v10')
-			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
-			document.getElementById('level-info').innerHTML = '<p></p>';
-			document.getElementById("legend").style.visibility = "hidden"; 
+			map.setStyle('mapbox://styles/owja/cjyjploc802ot1cphr1lvqob3')
+			document.getElementById('outcome-info').innerHTML = '<p><strong>Source:</strong> County Health Rankings<br><strong>Year:</strong> 2016<br><a href="https://www.countyhealthrankings.org/explore-health-rankings/measures-data-sources/county-health-rankings-model/health-factors/health-behaviors/insufficient-sleep" target="_blank">Go to source</a></p>';
+			document.getElementById('level-info').innerHTML = '<p><em><span style="color:grey;">Query the map by clicking on a feature</span></em></p>';
+			document.getElementById('legend').style.visibility = 'visible';   
+			document.getElementById('legend-title').innerHTML = 'Insufficient Sleep (%)';
+			document.getElementById('label-vlow').innerHTML = '23 - 29';
+			document.getElementById('label-low').innerHTML = '29 - 32';
+			document.getElementById('label-mod').innerHTML = '32 - 34';
+			document.getElementById('label-high').innerHTML = '34 - 37';
+			document.getElementById('label-vhigh').innerHTML = '37 - 47';
+			document.getElementById('col-vlow').innerHTML = '<span style="background:#feebe2;"></span>';
+			document.getElementById('col-low').innerHTML = '<span style="background:#fbb4b9;"></span>';
+			document.getElementById('col-mod').innerHTML = '<span style="background:#f768a1;"></span>';
+			document.getElementById('col-high').innerHTML = '<span style="background:#c51b8a;"></span>';
+			document.getElementById('col-vhigh').innerHTML = '<span style="background:#7a0177;"></span>'; 
 		} else if (styleId === 'b7') {
 			map.setStyle('mapbox://styles/mapbox/light-v10')
 			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
