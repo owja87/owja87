@@ -352,10 +352,21 @@
 			document.getElementById('level-info').innerHTML = '<p></p>';
 			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'c6') {
-			map.setStyle('mapbox://styles/mapbox/light-v10')
-			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
-			document.getElementById('level-info').innerHTML = '<p></p>';
-			document.getElementById("legend").style.visibility = "hidden"; 
+			map.setStyle('mapbox://styles/owja/cjz9kx3oe07e71cqr8kpxfdpm')
+			document.getElementById('outcome-info').innerHTML = '<p><strong>Source:</strong> American Community Survey<br><strong>Year:</strong> 2016<br><a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-data.html" target="_blank">Go to source</a></p>';
+			document.getElementById('level-info').innerHTML = '<p><em><span style="color:grey;">Query the map by clicking on a feature</span></em></p>';
+			document.getElementById('legend').style.visibility = 'visible';   
+			document.getElementById('legend-title').innerHTML = 'Health Insurance Coverage (%)';
+			document.getElementById('label-vlow').innerHTML = '52 - 85';
+			document.getElementById('label-low').innerHTML = '85 - 88';
+			document.getElementById('label-mod').innerHTML = '88 - 91';
+			document.getElementById('label-high').innerHTML = '91 - 93';
+			document.getElementById('label-vhigh').innerHTML = '93 - 98';
+			document.getElementById('col-vlow').innerHTML = '<span style="background:#d7191c;"></span>';
+			document.getElementById('col-low').innerHTML = '<span style="background:#fdae61;"></span>';
+			document.getElementById('col-mod').innerHTML = '<span style="background:#ffffbf;"></span>';
+			document.getElementById('col-high').innerHTML = '<span style="background:#abdda4;"></span>';
+			document.getElementById('col-vhigh').innerHTML = '<span style="background:#2b83ba;"></span>';  
 		} else if (styleId === 'c7') {
 			map.setStyle('mapbox://styles/mapbox/light-v10')
 			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
