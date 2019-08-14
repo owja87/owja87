@@ -515,11 +515,11 @@
 			document.getElementById('label-mod').innerHTML = '45,362 - 50,785';
 			document.getElementById('label-high').innerHTML = '50,785 - 57,896';
 			document.getElementById('label-vhigh').innerHTML = '57,896 - 129,588';
-			document.getElementById('col-vlow').innerHTML = '<span style="background:#d7191c;"></span>';
-			document.getElementById('col-low').innerHTML = '<span style="background:#fdae61;"></span>';
-			document.getElementById('col-mod').innerHTML = '<span style="background:#ffffbf;"></span>';
-			document.getElementById('col-high').innerHTML = '<span style="background:#abdda4;"></span>';
-			document.getElementById('col-vhigh').innerHTML = '<span style="background:#2b83ba;"></span>';
+			document.getElementById('col-vlow').innerHTML = '<span style="background:#ffffcc;"></span>';
+			document.getElementById('col-low').innerHTML = '<span style="background:#a1dab4;"></span>';
+			document.getElementById('col-mod').innerHTML = '<span style="background:#41b6c4;"></span>';
+			document.getElementById('col-high').innerHTML = '<span style="background:#2c7fb8;"></span>';
+			document.getElementById('col-vhigh').innerHTML = '<span style="background:#253494;"></span>';
 		} else if (styleId === 'e7') {
 			map.setStyle('mapbox://styles/mapbox/light-v10')
 			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
@@ -789,10 +789,21 @@
 			document.getElementById('level-info').innerHTML = '<p></p>';
 			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'i6') {
-			map.setStyle('mapbox://styles/mapbox/light-v10')
-			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
-			document.getElementById('level-info').innerHTML = '<p></p>';
-			document.getElementById("legend").style.visibility = "hidden";
+			map.setStyle('mapbox://styles/owja/cjzaz30160ru61co7hmcv0fsn')
+			document.getElementById('outcome-info').innerHTML = '<p><strong>Source:</strong> American Community Survey<br><strong>Year:</strong>2013 - 2017<br><a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-data.html" target="_blank">Go to source</a></p>';
+			document.getElementById('level-info').innerHTML = '<p><em><span style="color:grey;">Query the map by clicking on a feature</span></em></p>';
+			document.getElementById('legend').style.visibility = 'visible';   
+			document.getElementById('legend-title').innerHTML = 'Median Home Value ($)';
+			document.getElementById('label-vlow').innerHTML = '33,300 - 86,020';
+			document.getElementById('label-low').innerHTML = '86,020 - 107,040';
+			document.getElementById('label-mod').innerHTML = '107,040 - 133,760';
+			document.getElementById('label-high').innerHTML = '133,760 - 174,760';
+			document.getElementById('label-vhigh').innerHTML = '174,760 - 995,900';
+			document.getElementById('col-vlow').innerHTML = '<span style="background:#ffffcc;"></span>';
+			document.getElementById('col-low').innerHTML = '<span style="background:#a1dab4;"></span>';
+			document.getElementById('col-mod').innerHTML = '<span style="background:#41b6c4;"></span>';
+			document.getElementById('col-high').innerHTML = '<span style="background:#2c7fb8;"></span>';
+			document.getElementById('col-vhigh').innerHTML = '<span style="background:#253494;"></span>';
 		} else if (styleId === 'i7') {
 			map.setStyle('mapbox://styles/mapbox/light-v10')
 			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
@@ -849,10 +860,21 @@
 			document.getElementById('level-info').innerHTML = '<p></p>';
 			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'j6') {
-			map.setStyle('mapbox://styles/mapbox/light-v10')
-			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
-			document.getElementById('level-info').innerHTML = '<p></p>';
-			document.getElementById("legend").style.visibility = "hidden"; 
+			map.setStyle('mapbox://styles/owja/cjzb09hhl0gi21cpcsc830124')
+			document.getElementById('outcome-info').innerHTML = '<p><strong>Source:</strong> American Community Survey<br><strong>Year:</strong>2013 - 2017<br><a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-data.html" target="_blank">Go to source</a></p>';
+			document.getElementById('level-info').innerHTML = '<p><em><span style="color:grey;">Query the map by clicking on a feature</span></em></p>';
+			document.getElementById('legend').style.visibility = 'visible';   
+			document.getElementById('legend-title').innerHTML = 'Median Rent ($)';
+			document.getElementById('label-vlow').innerHTML = '288 - 589';
+			document.getElementById('label-low').innerHTML = '589 - 651';
+			document.getElementById('label-mod').innerHTML = '651 - 721';
+			document.getElementById('label-high').innerHTML = '721 - 848';
+			document.getElementById('label-vhigh').innerHTML = '848 - 1,973';
+			document.getElementById('col-vlow').innerHTML = '<span style="background:#ffffcc;"></span>';
+			document.getElementById('col-low').innerHTML = '<span style="background:#a1dab4;"></span>';
+			document.getElementById('col-mod').innerHTML = '<span style="background:#41b6c4;"></span>';
+			document.getElementById('col-high').innerHTML = '<span style="background:#2c7fb8;"></span>';
+			document.getElementById('col-vhigh').innerHTML = '<span style="background:#253494;"></span>'; 
 		} else if (styleId === 'j7') {
 			map.setStyle('mapbox://styles/mapbox/light-v10')
 			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
