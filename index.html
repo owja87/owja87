@@ -50,7 +50,7 @@
 				<div class="form-group">
 					<select class="form-control" id="level-select">
 						<option value="" disabled selected>Choose a Level</option>
-						<option value="1">Regions</option>
+						<!--<option value="1">Regions</option>-->
 						<option value="2">Census Divisions</option>
 						<option value="3">States</option>
 						<!-- <option value="4">CBSAs</option>
@@ -434,10 +434,21 @@
 			document.getElementById('level-info').innerHTML = '<p></p>';
 			document.getElementById("legend").style.visibility = "hidden";
 		} else if (styleId === 'd6') {
-			map.setStyle('mapbox://styles/mapbox/light-v10')
-			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
-			document.getElementById('level-info').innerHTML = '<p></p>';
-			document.getElementById("legend").style.visibility = "hidden"; 
+			map.setStyle('mapbox://styles/owja/cjzauoabt0nr01cqe4hgi2rf0')
+			document.getElementById('outcome-info').innerHTML = '<p><strong>Source:</strong> American Community Survey<br><strong>Year:</strong>2013 - 2017<br><a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-data.html" target="_blank">Go to source</a></p>';
+			document.getElementById('level-info').innerHTML = '<p><em><span style="color:grey;">Query the map by clicking on a feature</span></em></p>';
+			document.getElementById('legend').style.visibility = 'visible';   
+			document.getElementById('legend-title').innerHTML = 'Poverty rate (%)';
+			document.getElementById('label-vlow').innerHTML = '2.4 - 10.6';
+			document.getElementById('label-low').innerHTML = '10.6 - 13.7';
+			document.getElementById('label-mod').innerHTML = '13.7 - 16.7';
+			document.getElementById('label-high').innerHTML = '16.7 - 20.8';
+			document.getElementById('label-vhigh').innerHTML = '20.8 - 52';
+			document.getElementById('col-vlow').innerHTML = '<span style="background:#feebe2;"></span>';
+			document.getElementById('col-low').innerHTML = '<span style="background:#fbb4b9;"></span>';
+			document.getElementById('col-mod').innerHTML = '<span style="background:#f768a1;"></span>';
+			document.getElementById('col-high').innerHTML = '<span style="background:#c51b8a;"></span>';
+			document.getElementById('col-vhigh').innerHTML = '<span style="background:#7a0177;"></span>';
 		} else if (styleId === 'd7') {
 			map.setStyle('mapbox://styles/mapbox/light-v10')
 			document.getElementById('outcome-info').innerHTML = '<p>Sorry, no data available for that combination of outcome and level :(</p>';
