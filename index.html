@@ -20,7 +20,7 @@
 <body>
 	<div class="all_content_row">
 		<div class="left_panel_column">
-			<div class="heading"></div>
+			<a href="https://owja87.github.io/owja87/"><div class="heading"></div></a>
 			<!-- Div for dropdown select to change map style  -->
 			<div class="info-section">
 				<div class="form-group">
@@ -69,27 +69,27 @@
 				<button type="button" class="btn" onclick="switchStyle()">Submit</button>
 				<div id='outcome-info'></div>
 				<div id='level-info'></div>
+				<!-- Div for map legend --->
+				<div class="map-overlay" id="legend" style="visibility:hidden;">
+					<div id="legend-title" style="font-size:12px; color: #808080; font-weight: 700; margin-bottom: 10px;"></div>
+					<nav class='legend clearfix'>
+					<div id="col-vlow"></div>
+					<div id="col-low" ></div>
+					<div  id="col-mod"></div>
+					<div id="col-high"></div>
+					<div id="col-vhigh"></div>    
+					<label id="label-vlow"></label>
+					<label id="label-low"></label>
+					<label id="label-mod"></label>
+					<label id="label-high"></label>
+					<label id="label-vhigh"></label>			
+				</div>
 			</div>
 			<div class="map-footer"></div>
 		</div>
 		<div class="map_column">
 			<!-- Our web map and content will go here -->
 			<div id="map"></div>
-			<!-- Div for map legend --->
-			<div class="map-overlay" id="legend" style="visibility:hidden;">
-				<div id="legend-title" style="font-size:9px; color: #808080; font-weight: 700;"></div>
-				<nav class='legend clearfix'>
-				<div id="col-vlow"></div>
-				<div id="col-low" ></div>
-				<div  id="col-mod"></div>
-				<div id="col-high"></div>
-				<div id="col-vhigh"></div>    
-				<label id="label-vlow"></label>
-				<label id="label-low"></label>
-				<label id="label-mod"></label>
-				<label id="label-high"></label>
-				<label id="label-vhigh"></label>			
-			</div>
 		</div>
 	</div>
 
